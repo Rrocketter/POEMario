@@ -196,20 +196,23 @@ function big() {
   }
 }
 
+let existingText = null
 function drawDangerousText(name, pxlocal) {
+  if(existingText)
+    destroy(existingText)
+
     const textObj = add([
       text(name),
       pos(pxlocal, 0),
       origin('center'),
       color(1, 1, 1),
     ]);
+  
 
-  wait(3, () => {
-    destroy(textObj);
-  });
+  existingText = textObj
 
   return textObj;
-  }
+}
 
 const player = add([
   sprite('mario-standing'),
