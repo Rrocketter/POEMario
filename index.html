@@ -166,6 +166,88 @@ const scoreLabel = add([
 
 add([text('level ' + parseInt(levelIndex + 1)), pos(40, 6)])
 
+
+let tipNumber = 0
+function RecycleTip() {
+ 
+  switch(tipNumber) {
+    case 0: 
+      dangerousRecyclingTextObj = drawDangerousText('Companies in the US use credits \nlike these (Carbon Credits) to help protect the environment', 50)
+      console.log("case 0")
+      tipNumber++
+      break;
+    case 1: 
+      dangerousRecyclingTextObj = drawDangerousText('Recycling is important! \nAround $100 Billion is lost in the economy from single use plastic bags.', 50);
+      console.log("case 1")
+      tipNumber++
+      break;
+    case 2: 
+      dangerousRecyclingTextObj = drawDangerousText('Despite this, plastic recycling rates are far lower than of other materials', 50)
+      console.log("case 2")
+      tipNumber++
+      break;
+    case 3: 
+      dangerousRecyclingTextObj = drawDangerousText('There are 7 common groups of plastic: \n PET, HDPE, PVC/Vinyl, LDPE, PP, PS/Styrofoam, and Other', 50)
+      console.log("case 3")
+      tipNumber++
+      break;
+    case 4:
+      dangerousRecyclingTextObj = drawDangerousText('Recycling rates differ upon the type of plastic being recycled', 50)
+      console.log("case 4")
+      tipNumber++
+      break; 
+    case 5: 
+      dangerousRecyclingTextObj = drawDangerousText('PET and HDPE have the highest recycling\n Materials such as PS are not often recycled', 50)
+      tipNumber++
+      break;
+    case 6:
+      dangerousRecyclingTextObj = drawDangerousText('In addition, recycling rates vary vastly between countries.\n Poorer countries are less likely to recycle materials than richer ones', 50)
+      tipNumber++
+      break;
+    case 7: 
+      dangerousRecyclingTextObj = drawDangerousText('The first step of the recycling process is to sort the material', 50)
+      tipNumber++
+      break;
+    case 8:
+      dangerousRecyclingTextObj = drawDangerousText('Most sorting is done automatically, with a manual inspection to ensure quality', 50)
+      tipNumber++
+      break;
+    case 9:
+      dangerousRecyclingTextObj = drawDangerousText('After sorting, most plastics are then melted to be created into different materials', 50)
+      tipNumber++
+      break; 
+    case 10:
+      dangerousRecyclingTextObj = drawDangerousText('The melted plastics are then moulded to form different products', 50)
+      tipNumber++
+      break;  
+    case 11:
+      dangerousRecyclingTextObj = drawDangerousText('A list of plastic items created include: \n Bags, E-readers, drink bottles, flower pots, and more', 50)
+      tipNumber++
+      break;  
+    case 12: 
+      dangerousRecyclingTextObj = drawDangerousText('Unfortunately, only a small percentage of plastics end up being recycled', 50)
+      tipNumber++
+      break;
+    case 13: 
+      dangerousRecyclingTextObj = drawDangerousText('In addition, the recycling process may end up damaging the ecosystem, \n in the form of harmful microplastics that leech into water', 50)
+      tipNumber++
+      break;
+    case 14:
+      dangerousRecyclingTextObj = drawDangerousText('New technologies aim to combat these effects, and improve plastic recycling efficiency overall')
+      tipNumber++ 
+      break;  
+    case 15: 
+      dangerousRecyclingTextObj = drawDangerousText ('Examples of emerging technologies include AI sorting systems \n and biodegradable plastics')
+      tipNumber++
+      break;
+
+  }
+  
+  
+ 
+}
+
+
 function big() {
   let timer = 0
   let isBig = false
@@ -231,7 +313,7 @@ player.collides('dangerous', (d) => {
     
     destroy(d)
     
-     dangerousRecyclingTextObj = drawDangerousText('Recycling is important! \nAround $100 Billion is lost in the economy from single use plastic bags.', 50);
+     RecycleTip();
     
   } else {
      go('lose', { score: scoreLabel.value}) 
@@ -278,7 +360,7 @@ player.on('headbump', (obj) => {
     gameLevel.spawn('$', obj.gridPos.sub(0,1))
     destroy(obj)
     gameLevel.spawn('}', obj.gridPos.sub(0,0))
-    dangerousRecyclingTextObj = drawDangerousText('Companies in the US use credits \nlike these (Carbon Credits) to help protect the environment!', 60);
+    RecycleTip();
   }
   if(obj.is('mushroom-surprise')) {
     gameLevel.spawn('#', obj.gridPos.sub(0,1))
