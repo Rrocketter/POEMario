@@ -1,0 +1,448 @@
+  <!DOCTYPE html>
+
+  <html>
+    
+  <head>
+    <title>POE Mario S3</title>
+    <meta charset="utf-8">
+    <style>
+      * {
+        margin: 0;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0; 
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game-canvas"></canvas>
+  </body>
+  </html>
+  <script src="https://kaboomjs.com/lib/0.5.0/kaboom.js"></script>
+  <script src="https://kaboomjs.com/lib/0.5.0/plugins/aseprite.js"></script>
+  <script src="https://kaboomjs.com/lib/0.5.0/plugins/pedit.js"></script>
+  <script src="https://kaboomjs.com/pub/legacy/kbmsprite.js"></script>
+
+    <script>
+
+  kaboom({
+    ...{"fullscreen":true,"width":1000,"height":1000,"scale":1,"startScene":"main","version":"0.5.0","clearColor":[0.53,0.80,0.92,1]},
+    background:[0,0,255],
+    global: true,
+    plugins: [ peditPlugin, asepritePlugin, kbmspritePlugin ],
+  });
+      
+  loadSprite("block", "sprites/block.png");
+  loadSprite("sky", "sprites/sky.png")
+  loadSprite("grass", "sprites/grass.png")
+  loadSprite("blue-block", "sprites/blue-block.png");
+  loadSprite("blue-brick", "sprites/blue-brick.png");
+  loadSprite("trash", "sprites/trash.png");
+  loadSprite("blue-steel", "sprites/blue-steel.png");
+  loadSprite("recycle-block", "sprites/recycle-block.png");
+  loadSprite("brick", "sprites/brick.png");
+  loadSprite("coin", "sprites/coin.png");
+  loadSprite("waterbottle", "sprites/waterbottle.png");
+  loadSprite("mario-standing", "sprites/mario-standing.png");
+  loadSprite("computer", "sprites/computer.png"); 
+  loadSprite("leaf", "sprites/leaf.png");
+  loadSprite("pipe-left", "sprites/pipe-left.png");
+  loadSprite("pipe-right", "sprites/pipe-right.png");
+  loadSprite("pipe-top-left-side", "sprites/pipe-top-left-side.png");
+  loadSprite("pipe-top-right-side", "sprites/pipe-top-right-side.png");
+  loadSprite("recycle", "sprites/recycle.png");
+  loadSprite("unboxed", "sprites/unboxed.png");
+  loadSprite("sky2", "sprites/sky2.png"); 
+  scene("lose", (args = {}) => {
+  add([
+    text('score: ' + args.score),
+    origin('center'),
+    pos(width()/2, height()/2),
+    scale(10)
+  ])
+  });
+
+      
+  scene("main", (args = {}) => {
+  let MOVE_SPEED = 120
+  const JUMP_FORCE = 360
+  const BIG_JUMP_FORCE = 550
+  let CURRENT_JUMP_FORCE = JUMP_FORCE 
+  const ENEMY_SPEED = 20
+  const FALL_DEATH = 600
+
+  let isJumping = true
+    
+  layers(['obj', 'ui'], 'obj')
+
+  const maps = [
+    [
+      '         %%                    ',
+      '                               ',
+      '                               ',
+      '         ==                    ',
+      '                               ',
+      '    *    =====            %    ',
+      '                               ',
+      '                      -+       ',
+      '           ^   ^      ()       ',
+      'xxxxxxxxxxxxxxxxxx x  xx  xx   ',
+    ], [
+      '                     %          ',
+      'm                              m', 
+      'm               s    m         m',
+      'm            s  s              m',
+      'm            s *s              m',
+      'm         s  s  s        -+    m',
+      'm      s  s  s  s        ()     ',
+      'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+    ], [
+      '                   %          ',
+      '                              ',
+      '                              ',
+      '                              ',
+      '         {=      m  s         ',
+      '                 m  s     -+  ',
+      '      ^      !   m  s     ()  ',
+      'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+    ], [
+      '                              ',
+      '                              ',
+      '                              ',
+      '                              ',
+      '                              ',
+      '                              ',
+      '           ==*                ',
+      '                            -+',
+      '          !!^   ^   ^ !     ()',
+      'xxxxxxxxxxxxxxxxxxxxxxxx    xx',
+    ], [
+      '                             ',
+      'm                           m',
+      'm                           m',
+      'm        @@@*{              m',
+      'm                   s       m',
+      'm                   s     -+m',
+      'm      !     ^ s ^  s   s ()m',
+      'zzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+    ],
+  ]
+
+
+  const levelCfg = {
+    width: 20,
+    height: 20,
+    '=' : [sprite('block'), solid()],
+    'x' : [sprite('brick'), solid()],
+    'y' : [sprite('grass'), solid()],
+    '$' : [sprite('coin'), 'coin'],
+    '%' : [sprite('recycle'), 'coin-block', solid()],
+    '*' : [sprite('recycle'), 'leaf-block', solid()],   
+    '{' : [sprite('recycle'), 'computer-block', solid()],
+    '}' : [sprite('unboxed'), solid()], 
+    '(' : [sprite('pipe-left'), scale(0.5), solid()],
+    ')' : [sprite('pipe-right'), scale(0.5), solid()], 
+    '-' : [sprite('pipe-top-left-side'), scale(0.5), solid(), 'pipe'],
+    '+' : [sprite('pipe-top-right-side'), scale(0.5), solid(), 'pipe'], 
+    '^' : [sprite('waterbottle'), solid(), 'dangerous'], 
+    'a' : [sprite('computer'), 'computer', body()],
+    '#' : [sprite('leaf'), 'leaf', body()], 
+    'm' : [sprite('blue-brick'), solid(),scale(0.5)],
+    'z' : [sprite('blue-block'), solid(), scale(0.5)], 
+    '@' : [sprite('recycle-block'), solid(), scale(0.5), 'coin-block'],
+    '!' : [sprite('trash'), 'dangerous', scale(0.5)],
+    's' : [sprite('blue-steel'), solid(), scale(0.5)],    
+    ' ' : [sprite('sky')],
+    't' : [sprite('sky2')], 
+  }
+
+  const levelIndex = args.level ?? 0 
+  const gameLevel = addLevel(maps[levelIndex], levelCfg)
+
+  const scoreGlobal = args.score ?? 0
+  const scoreLabel = add([
+    text('score: ' + scoreGlobal),
+    pos(100,-200),
+    layer('ui'),
+    {
+      value: scoreGlobal,
+    }
+  ])
+
+
+
+  
+
+
+  function DangerTip() {
+    dangerNumber = Math.floor(Math.random() * 7)
+    switch(dangerNumber) {
+      case 0:
+        dangerousRecyclingTextObj = drawDangerousText('Tens of millions of tons of plastic leech into aquatic ecosystems every year', 50, -50)
+
+        break;
+      case 1: 
+        dangerousRecyclingTextObj = drawDangerousText('Nearly 80% of all plastics end up in landfills.\n There, it can take hundreds of years to decompose', 50, -50)
+
+        break;
+      case 2: 
+        dangerousRecyclingTextObj = drawDangerousText('Plastics are responsible for 3.3% of all CO2 emissions, most of which comes from production', 50, -50)
+
+        break;
+      case 3: 
+        dangerousRecyclingTextObj = drawDangerousText('Plastic pollution can end up affecting humans. \n Plastics in humans increases the risk of cancer and lung diseases', 50, -50)
+
+        break;
+      case 4: 
+        dangerousRecyclingTextObj = drawDangerousText('Nearly 80% of all plastics end up in landfills.\n There, it can take hundreds of years to decompose', 50, -50)
+
+        break;
+      case 5:
+        dangerousRecyclingTextObj = drawDangerousText('Some plastics are incinieranted, causing extremely harmful and toxic chemicals to be released into the enviornment', 50, -50)
+ 
+        break;
+      case 6:
+        dangerousRecyclingTextObj = drawDangerousText('Nearly 80% of all plastics end up in landfills.\n There, it can take hundreds of years to decompose', 50, -50)
+     
+        break;  
+    }
+      
+  }
+
+  
+  function RecycleTip() {
+    tipNumber = Math.floor(Math.random() * 6)
+    switch(tipNumber) {
+      case 0: 
+        dangerousRecyclingTextObj = drawDangerousText('Companies in the US use credits \nlike these (Carbon Credits) to help protect the environment', 50, -50)
+        
+        console.log("case 0")
+        break;
+      case 1: 
+        dangerousRecyclingTextObj = drawDangerousText('Recycling is important! \nAround $100 Billion is lost in the economy from single use plastic bags.', 50, -50);
+        
+        console.log("case 1")
+      
+        break;
+      case 2: 
+        dangerousRecyclingTextObj = drawDangerousText('The plastic recycling industry is worth around $34B', 50, -50)
+        
+        console.log("case 2")
+       
+        break;
+      case 3: 
+        dangerousRecyclingTextObj = drawDangerousText('The plastic recycling industry is estimated to be worth $56B by 2026', 50, -50)
+        
+        break;
+      case 4: 
+        dangerousRecyclingTextObj = drawDangerousText('Only 5% of the 40M tons of plastic waste in the U.S. was recycled (2022)', 50, -50)
+       
+        break;
+      case 5: 
+      dangerousRecyclingTextObj = drawDangerousText('Plastic waste management costs the U.S. over $2B a year', 50, -50)
+      
+      default: 
+        tipNumber = 0; 
+        RecycleTip()
+
+    }
+    
+  
+  }
+
+
+  function big() {
+    let timer = 0
+    let isBig = false
+    return {
+      update() {
+        if (isBig) {
+          timer -=dt()
+          if (timer <=0) {
+            this.smallify()
+          }
+        }
+      },
+      isBig() {
+        return isBig
+      },
+      smallify() {
+        this.scale = vec2(1)
+        timer = 0
+        isBig = false
+        CURRENT_JUMP_FORCE = JUMP_FORCE
+      },
+      biggify(time) {
+        this.scale = vec2(2)
+        timer = time
+        isBig = true
+        CURRENT_JUMP_FORCE = BIG_JUMP_FORCE
+      },
+      speedify(time) {
+        MOVE_SPEED *= 2; 
+        timer = time
+      }
+      
+    }
+  }
+
+  let existingText = null
+  function drawDangerousText(name, pxX, pxY) {
+    if(existingText)
+      destroy(existingText)
+
+      const textObj = add([
+        text(name),
+        pos(pxX, pxY),
+        origin('center'),
+        color(1, 1, 1),
+      ]);
+    
+
+    existingText = textObj
+
+    return textObj;
+  }
+
+  const player = add([
+    sprite('mario-standing'),
+    pos(30,0),
+    body(),
+    big(),
+    origin('bot')
+  ])
+    
+  let dangerousRecyclingTime = 0;
+  let dangerousRecyclingTextObj = null;
+  let isTextDestroyed = false
+
+  player.collides('dangerous', (d) => {
+    if(isJumping) {
+      
+      destroy(d)
+      
+      DangerTip();
+      
+    } else {
+      go('lose', { score: scoreLabel.value}) 
+    }
+  })
+
+  player.action(() => {
+    camPos(player.pos)
+    if (player.pos.y >= FALL_DEATH) {
+      go('lose', { score: scoreLabel.value })
+    }
+  })
+
+  keyDown('left', () => {
+    player.move(-MOVE_SPEED, 0)
+  })
+
+  keyDown('right', () => {
+    player.move(MOVE_SPEED, 0)
+  })
+
+    player.action(() => {
+      if(player.grounded()) {
+        isJumping = false
+      }
+    })
+
+    keyPress('space', () => {
+      if (player.grounded()) {
+        isJumping = true
+        player.jump(CURRENT_JUMP_FORCE)
+      }
+    })
+
+    keyPress('up', () => {
+      if (player.grounded()) {
+        isJumping = true
+        player.jump(CURRENT_JUMP_FORCE)
+      }
+    })
+
+  player.on('headbump', (obj) => {
+    if(obj.is('coin-block')) {
+      gameLevel.spawn('$', obj.gridPos.sub(0,1))
+      destroy(obj)
+      gameLevel.spawn('}', obj.gridPos.sub(0,0))
+      RecycleTip();
+    }
+    if(obj.is('leaf-block')) {
+      dangerousRecyclingTextObj = drawDangerousText('With a bigger initiative and \nmore people, piece by piece, the environment will be become cleaner everyday!', 50, -50)
+      gameLevel.spawn('#', obj.gridPos.sub(0,1))
+      destroy(obj)
+      gameLevel.spawn('}', obj.gridPos.sub(0,0))
+    
+    }
+    if(obj.is('computer-block')){
+      angerousRecyclingTextObj = drawDangerousText('Technologies like AI can improve the efficiency and speed of plastic recycling processes.', 50, -50)
+      gameLevel.spawn('a', obj.gridPos.sub(0,1))
+      destroy(obj)
+      gameLevel.spawn('}', obj.gridPos.sub(0,0))
+    }
+  })
+
+  action('leaf', (m) => {
+    m.move(20, 0)
+  })
+
+  action('computer', (c) => {
+    c.move(20, 0)
+  })
+
+  player.collides('computer', (c) => {
+    player.speedify(6)
+    destroy(c)
+  })
+
+  player.collides('leaf', (m) => {
+    player.biggify(6)
+    destroy(m)
+  })
+
+  player.collides('coin', (c) => {
+    scoreLabel.value++
+    scoreLabel.text = 'score: '+ scoreLabel.value
+    destroy(c)
+  })
+
+  action('dangerous', (d) => {
+    d.move(-ENEMY_SPEED,0)
+
+    if (d.pos.x <= 0) {
+
+      d.move(ENEMY_SPEED, 0); 
+    } else if (d.pos.x >= width() - d.width) {
+
+      d.move(-ENEMY_SPEED, 0); 
+    }
+  })
+
+  player.collides('pipe', () => {
+    keyPress('down', () => {
+      go('main', {
+        level: (levelIndex + 1) % maps.length,
+        score: scoreLabel.value
+      })
+    })
+  })
+
+
+  });
+      
+  start("main");
+
+    </script>
+  </body>
+  </html>
